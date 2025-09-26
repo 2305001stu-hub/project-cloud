@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Voting</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url('https://images.unsplash.com/photo-1524069290683-0457abfe42c3?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8c2Nob29sJTIwc3R1ZGVudHN8ZW58MHx8MHx8fDA%3D') no-repeat center center fixed;
+      background-size: cover;
+    }
+    .navbar {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+    }
+    .navbar a {
+      text-decoration: none;
+      background: #ffffffcc;
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 14px;
+      border-radius: 6px;
+      color: black;
+    }
+    .navbar a:hover {
+      background: #ffcc00;
+    }
+    .container {
+      background: rgba(255,255,255,0.9);
+      padding: 20px;
+      border-radius: 12px;
+      width: 80%;
+      margin: 20px auto;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    h2, h3 {
+      text-align: center;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 10px 0;
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <a href="index.html">Home</a>
+    <a href="teachers.html">Teachers</a>
+  </div>
+
+  <div class="container">
+    <h2>Student Voting</h2>
+    <form id="studentForm">
+      <input type="text" id="studentID" placeholder="Enter Your Unique Student ID" required><br>
+      <button type="submit">Proceed to Vote</button>
+    </form>
+  </div>
+
+  <div class="container" id="votingSection" style="display:none;">
+    <h3>Choose Your Candidate</h3>
+    <ul id="candidateList"></ul>
+  </div>
+
+  <div class="container">
+    <h3>Students Who Have Voted</h3>
+    <ul id="votedList"></ul>
+  </div>
+
+  <script>
+    const studentForm = document.getElementById("studentForm");
+    const votingSection = document.getElementById("votingSection");
+    const candidateList = document.getElementById("candidateList");
+    const votedList = document.getElementById("votedList");
+
+    let currentStudentID = "";
+
+    studentForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+      let studentID = document.getElementById("studentID").value.trim();
+
+      if (!studentID) return;
+
+      let voted = JSON.parse(localStorage.getItem("votedStudents")) || [];
+      if (voted.find(v => v.id === studentID)) {
+        alert("You have already voted!");
+        return;
+      }
+
+      currentStudentID = studentID;
+      loadCandidates();
+      votingSection.style.display = "block";
+    });
+
+    function loadCandidates() {
+      candidateList.innerHTML = "";
+      let candidates = JSON.parse(localStorage.getItem("candidates")) || [];
+
+      candidates.forEach(candidate => {
+        let li = document.createElement("li");
+        li.innerHTML = `
+          <span>${candidate.name} (ID: ${candidate.id})</span>
+          <button onclick="vote('${candidate.id}')">Vote</button>
+        `;
+        candidateList.appendChild(li);
+      });
+    }
+
+    function vote(candidateID) {
+      let voted = JSON.parse(localStorage.getItem("votedStudents")) || [];
+      voted.push({ id: currentStudentID, votedFor: candidateID });
+      localStorage.setItem("votedStudents", JSON.stringify(voted));
+      alert("Your vote has been cast successfully!");
+      showVotedList();
+      votingSection.style.display = "none";
+      studentForm.reset();
+    }
+
+    function showVotedList() {
+      votedList.innerHTML = "";
+      let voted = JSON.parse(localStorage.getItem("votedStudents")) || [];
+      voted.forEach(v => {
+        let li = document.createElement("li");
+        li.textContent = `Student ID: ${v.id} has voted`;
+        votedList.appendChild(li);
+      });
+    }
+
+    window.onload = showVotedList;
+  </script>
+
+</body>
+</html>

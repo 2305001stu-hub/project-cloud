@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teacher Panel - Manage Candidates</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url('https://images.unsplash.com/photo-1524069290683-0457abfe42c3?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8c2Nob29sJTIwc3R1ZGVudHN8ZW58MHx8MHx8fDA%3D') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+    }
+    .navbar a {
+      text-decoration: none;
+      background: #ffffffcc;
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 14px;
+      border-radius: 6px;
+      color: black;
+    }
+    .navbar a:hover {
+      background: #ffcc00;
+    }
+
+    /* Containers */
+    .container {
+      background: rgba(255,255,255,0.9);
+      padding: 20px;
+      border-radius: 12px;
+      width: 80%;
+      margin: 20px auto;
+    }
+
+    /* Inputs and buttons */
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #28a745;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background: #218838;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+
+    h2, h3 {
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* Refresh and Clear buttons */
+    #refreshVotes, #clearVotes {
+      margin-bottom: 10px;
+      padding: 8px 16px;
+      border-radius: 5px;
+      border: none;
+      color: white;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    #refreshVotes {
+      background: #007bff;
+    }
+    #refreshVotes:hover {
+      background: #0056b3;
+    }
+    #clearVotes {
+      background: #dc3545;
+    }
+    #clearVotes:hover {
+      background: #a71d2a;
+    }
+
+    /* Voted students list */
+    #votedStudentsList li {
+      background: #f1f1f1;
+      color: black;
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <a href="index.html">Home</a>
+    <a href="students.html">Students</a>
+  </div>
+
+  <!-- Login Section -->
+  <div class="container" id="loginSection">
+    <h2>Teacher Login</h2>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Enter Username" required><br>
+      <input type="password" id="password" placeholder="Enter Password" required><br>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <!-- Candidate Management Section -->
+  <div class="container hidden" id="candidateSection">
+    <h2>Teacher Panel - Manage Candidates</h2>
+
+    <!-- Add Candidate -->
+    <form id="candidateForm">
+      <input type="text" id="candidateName" placeholder="Enter Candidate Name" required>
+      <input type="text" id="candidateID" placeholder="Enter Candidate ID" required>
+      <button type="submit">Add Candidate</button>
+    </form>
+
+    <!-- Candidate Table -->
+    <h3>Candidate List</h3>
+    <table id="candidateTable">
+      <tr>
+        <th>Candidate ID</th>
+        <th>Candidate Name</th>
+        <th>Action</th>
+      </tr>
+    </table>
+
+    <!-- Voted Students -->
+    <h3>Voted Students</h3>
+    <button id="refreshVotes">Refresh List</button>
+    <button id="clearVotes">Delete All Votes</button>
+    <ul id="votedStudentsList"></ul>
+  </div>
+
+  <script>
+    // --- LOGIN HANDLING ---
+    const loginForm = document.getElementById("loginForm");
+    const loginSection = document.getElementById("loginSection");
+    const candidateSection = document.getElementById("candidateSection");
+
+    const teacherUser = "teacher";
+    const teacherPass = "1234";
+
+    loginForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+
+      if (user === teacherUser && pass === teacherPass) {
+        loginSection.classList.add("hidden");
+        candidateSection.classList.remove("hidden");
+        loadCandidates();
+        showVotedStudents(); // show voted students initially
+      } else {
+        alert("Invalid credentials. Try again!");
+      }
+    });
+
+    // --- CANDIDATE MANAGEMENT ---
+    const candidateForm = document.getElementById("candidateForm");
+    const candidateTable = document.getElementById("candidateTable");
+
+    candidateForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const name = document.getElementById("candidateName").value.trim();
+      const id = document.getElementById("candidateID").value.trim();
+
+      if (!name || !id) return;
+
+      let candidates = JSON.parse(localStorage.getItem("candidates")) || [];
+
+      // check for duplicate ID
+      if (candidates.find(c => c.id === id)) {
+        alert("Candidate ID must be unique! This ID is already taken.");
+        return;
+      }
+
+      candidates.push({ id, name });
+      localStorage.setItem("candidates", JSON.stringify(candidates));
+      renderCandidates();
+      candidateForm.reset();
+    });
+
+    function renderCandidates() {
+      candidateTable.innerHTML = `
+        <tr>
+          <th>Candidate ID</th>
+          <th>Candidate Name</th>
+          <th>Action</th>
+        </tr>
+      `;
+
+      let candidates = JSON.parse(localStorage.getItem("candidates")) || [];
+      candidates.forEach((candidate, index) => {
+        let row = candidateTable.insertRow();
+        row.insertCell(0).innerText = candidate.id;
+        row.insertCell(1).innerText = candidate.name;
+
+        let actionCell = row.insertCell(2);
+        let delBtn = document.createElement("button");
+        delBtn.innerText = "Delete";
+        delBtn.style.background = "red";
+        delBtn.onclick = function() {
+          candidates.splice(index, 1);
+          localStorage.setItem("candidates", JSON.stringify(candidates));
+          renderCandidates();
+        };
+        actionCell.appendChild(delBtn);
+      });
+    }
+
+    function loadCandidates() {
+      renderCandidates();
+    }
+
+    // --- VOTED STUDENTS ---
+    function showVotedStudents() {
+      const votedList = document.getElementById("votedStudentsList");
+      votedList.innerHTML = ""; // clear previous list
+
+      let voted = JSON.parse(localStorage.getItem("votedStudents")) || [];
+      voted.forEach(v => {
+        let li = document.createElement("li");
+        li.textContent = `Student ID: ${v.id} has voted`;
+        votedList.appendChild(li);
+      });
+    }
+
+    // Refresh button event
+    document.getElementById("refreshVotes").addEventListener("click", showVotedStudents);
+
+    // Delete all votes
+    document.getElementById("clearVotes").addEventListener("click", function() {
+      if (confirm("Are you sure you want to delete all voted students?")) {
+        localStorage.removeItem("votedStudents");
+        showVotedStudents();
+      }
+    });
+  </script>
+
+</body>
+</html>
